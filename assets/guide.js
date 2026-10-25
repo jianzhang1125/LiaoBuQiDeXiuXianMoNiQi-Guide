@@ -611,3 +611,12 @@ $('#copy-page-link').onclick=async()=>{
 window.addEventListener('hashchange',()=>requestAnimationFrame(update));
 update();
 })();
+
+document.addEventListener('click',event=>{
+ const cell=event.target.closest('.interactive-array [data-cell-info]');if(!cell)return;
+ const root=cell.closest('.interactive-array');
+ root.querySelectorAll('[data-cell-info]').forEach(button=>{
+  button.setAttribute('aria-pressed',String(button===cell));
+  button.classList.toggle('same-material',cell.dataset.arrayMaterial!=='empty'&&cell.dataset.arrayMaterial!=='unknown'&&button.dataset.arrayMaterial===cell.dataset.arrayMaterial&&button!==cell);
+ });
+});

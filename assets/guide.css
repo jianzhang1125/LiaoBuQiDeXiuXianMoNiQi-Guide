@@ -241,3 +241,16 @@ body[data-opening-route=body] .opening-original{margin:0}body[data-opening-route
 .opening-omitted{display:none!important}.opening-optional-warning{display:none;padding:12px;border:1px solid var(--accent,var(--gold))}
 body[data-opening-route=feiyu] .opening-optional-warning{display:block}
 @media(max-width:600px){.opening-chooser{padding:18px}.opening-buttons{grid-template-columns:1fr}.opening-context{gap:8px}.opening-context a{margin-left:0}.opening-context .opening-basis{width:100%}.opening-stage-plan{padding:14px}.opening-steps{padding-left:22px}}
+
+.interactive-array{padding:18px;border:1px solid var(--line);background:var(--surface,#1b2230);margin:18px 0;min-width:0}
+.interactive-array-heading h4{margin:0 0 8px!important}.interactive-array-heading>span{font-size:11px;color:var(--muted)}
+.interactive-array .array-grid{grid-template-columns:repeat(var(--array-columns),minmax(0,1fr));width:100%;max-width:540px;min-width:var(--array-min-width);gap:3px}
+.interactive-array-scroll{max-width:100%;overflow:auto;overscroll-behavior:contain;margin:14px 0}
+.interactive-array .array-cell{aspect-ratio:1;padding:0;min-width:0;font-size:clamp(12px,2vw,19px);line-height:1}
+.interactive-array .array-cell[aria-pressed=true]{outline:3px solid var(--gold);outline-offset:1px;z-index:1;font-weight:bold}
+.interactive-array .array-cell.same-material{box-shadow:inset 0 0 0 2px var(--gold)}
+.interactive-array .array-cell.water{background:#c4e2ef;color:#254968;border-color:#7dabbc}.interactive-array .array-cell.metal{background:#e4dfbd;color:#575024;border-color:#b8aa77}.interactive-array .array-cell.unknown{background:repeating-linear-gradient(135deg,#e1e1dd,#e1e1dd 5px,#eeeeea 5px,#eeeeea 10px);color:#5f6260;border-color:#aaa}
+.interactive-array-source,.interactive-array-stock{font-size:12px;color:var(--muted)}.interactive-array-stock summary,.array-source-image>summary{cursor:pointer;padding:10px;border:1px solid var(--line);font-size:12px}
+.array-source-image{margin:12px 0 22px}.array-source-counterparts{margin:18px 0;padding:14px;border:1px solid var(--line);display:grid;gap:8px;font-size:12px}.array-source-counterparts small{color:var(--muted)}
+.midgame-array-previews .interactive-array{padding:12px}.midgame-array-previews .interactive-array .array-cell{font-size:13px}.midgame-array-previews .interactive-array>p{font-size:12px}
+@media(max-width:600px){.interactive-array{padding:12px}.interactive-array .array-cell{min-height:0}.interactive-array .cell-readout{min-height:100px}}
