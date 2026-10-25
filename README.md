@@ -14,7 +14,7 @@
 ## 发布和更新
 
 本仓库是可直接部署的静态网站。GitHub Pages发布源为 `main` 分支根目录，`.nojekyll`关闭Jekyll处理。
-本地维护工具依次运行 `python guide-work/build.py`、`python guide-work/check_reading_guide.py`、`python guide-work/export_github_site.py`，再提交导出的站点目录。
+在原始本地整理工程中依次运行 `python guide-work/build.py`、`python guide-work/check_reading_guide.py`、`python guide-work/export_github_site.py`，再提交导出的站点目录。本仓库保存的是可直接部署的导出站点，也可以直接维护其中的HTML/CSS/JavaScript。
 发布包仅含网站和附带资料，不包含浏览器私人笔记、测试进度、缓存或下载的视频。
 
 ## 来源
