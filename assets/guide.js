@@ -40,7 +40,76 @@ function save(){
 }
 function stats(s){const ts=s?s.tasks:data.tasks;let done=0,skip=0;ts.forEach(t=>{if(state.checks[t.id])done++;else if(state.skips[t.id])skip++;});const applicable=ts.length-skip;return{done,skip,total:ts.length,applicable,percent:applicable?Math.round(done/applicable*100):0};}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function routeOf(t,override){return override||state.routes[t.id]||t.routes?.[0].id;}
+// Runs inside the guide application's scope to keep route changes consistent.
+const OPENING_KEY='jiujie-guide-opening-v1';
+let openingRoute='body';
+try{const saved=localStorage.getItem(OPENING_KEY);if(data.openingRoutes?.profiles[saved])openingRoute=saved;}catch(error){}
+const openingOriginalTitles=new Map(data.tasks.map(t=>[t.id,$('#'+t.id+' .guide-article > summary strong')?.textContent]));
+const openingOriginalSummaries=new Map(data.tasks.map(t=>[t.id,$('#'+t.id+' .guide-article > summary > span')?.textContent]));
+const openingOriginalHeadings=new Map(data.stages.map(s=>[s.id,$('#'+s.id+' .stage-heading > p')?.textContent]));
+function paintOpeningRoute(){
+ if(!data.openingRoutes)return;
+ const config=data.openingRoutes,profile=config.profiles[openingRoute],alternate=openingRoute==='feiyu';
+ document.body.dataset.openingRoute=openingRoute;
+ document.title=alternate?'正道攻略 · 飞羽三阳路线':'九劫正道 · 流程与 Wiki';
+ const heroLabel=$('.hero h1 em');if(heroLabel)heroLabel.textContent=alternate?'飞羽三阳路线':'流程与 Wiki';
+ const defenseQuestion=$('.question-links a[href="#s6"]');if(defenseQuestion)defenseQuestion.textContent=alternate?'守家与化形怎么安排？':'第80天怎么守？';
+ $$('[data-opening-route]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.openingRoute===openingRoute)));
+ $$('.opening-select').forEach(s=>s.value=openingRoute);
+ $$('.opening-basis').forEach(s=>s.textContent=profile.basis);
+ data.stages.forEach((stage,i)=>{
+   const p=profile.stages[i],root=$('#'+stage.id),heading=root.querySelector('.stage-heading h2');
+   heading.textContent=p.title;
+   root.querySelector('.stage-heading > p').textContent=alternate?p.priorities.join(' '):openingOriginalHeadings.get(stage.id);
+   const day=root.querySelector('.day-badge');if(day)day.textContent=p.day;
+   const fields=root.querySelectorAll('.stage-overview > div > p');fields[0].textContent=p.goal;fields[1].textContent=p.prep;
+   root.querySelector('.opening-stage-plan').hidden=!alternate;
+   if(alternate&&i===0){const links=root.querySelector('.guide-wiki-links');if(!links.dataset.normalHtml)links.dataset.normalHtml=links.innerHTML;links.innerHTML='<a href="#reference-staff">岗位与人员 →</a><a href="#arrays-midgame-wood">三阳用木阵 →</a><a href="#reference-talismans">双符修本命 →</a>';}
+   else if(i===0){const links=root.querySelector('.guide-wiki-links');if(links.dataset.normalHtml)links.innerHTML=links.dataset.normalHtml;}
+   for(const selector of [`#stage-nav a[href="#${stage.id}"]`,`#roadmap a[href="#${stage.id}"]`]){
+     const link=$(selector);if(!link)continue;
+     if(link.classList.contains('road-card')){link.querySelector('h3').textContent=p.title;link.querySelector('.card-day').textContent=p.day;link.querySelector('.card-goal').textContent=p.goal;}
+     else {const label=link.querySelector('span:nth-child(2)');label.replaceChildren(document.createTextNode(p.title));const small=document.createElement('small');small.textContent=p.day;label.append(small);}
+   }
+ });
+ for(const [id,title] of Object.entries(config.variants)){
+   const task=$('#'+id),variant=task.querySelector('.opening-feiyu'),comparison=task.querySelector('.opening-original');
+   variant.hidden=!alternate;
+   if(task.dataset.openingApplied!==openingRoute){comparison.open=!alternate;task.dataset.openingApplied=openingRoute;}
+   task.querySelector('.guide-article > summary strong').textContent=alternate?title:openingOriginalTitles.get(id);
+   task.querySelector('.guide-article > summary > span').textContent=alternate?'按飞羽分工与资源顺序推进；原有资料可展开对照。':openingOriginalSummaries.get(id);
+   $$(`.flow-index a[href="#${id}"]`).forEach(a=>a.textContent=alternate?title:openingOriginalTitles.get(id));
+ }
+ // These five choices describe entire source routes, so they follow the global
+ // selection. Optional later builds still have their own independent guidance.
+ config.coreTasks.forEach(id=>{$('#'+id+' .task-route-picker').hidden=true;});
+ const stages=data.stages.map(s=>$('#'+s.id+' .stage-heading h2').textContent);
+ $$('.stage-pagination a').forEach(a=>{const i=data.stages.findIndex(s=>a.hash==='#'+s.id);if(i>=0)a.textContent=stages[i];});
+ paintOpeningVisibility();
+}
+function paintOpeningVisibility(){
+ if(!data.openingRoutes)return;
+ const alternate=openingRoute==='feiyu';let target=null;
+ const stageIndex=data.stages.findIndex(s=>s.id===view);if(stageIndex>=0)$('#crumb').textContent=data.openingRoutes.profiles[openingRoute].stages[stageIndex].title;
+ try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)));}catch(error){}
+ for(const id of data.openingRoutes.bodyOnly){
+   const card=$('#'+id),direct=!!target&&(target===card||card.contains(target));
+   card.classList.toggle('opening-omitted',alternate&&!direct);
+   $$(`.flow-index a[href="#${id}"]`).forEach(a=>a.classList.toggle('opening-omitted',alternate));
+ }
+}
+function setOpeningRoute(route){
+ if(!data.openingRoutes?.profiles[route])return;
+ openingRoute=route;
+ try{localStorage.setItem(OPENING_KEY,route);}catch(error){}
+ refresh();applyFilter();
+ const target=document.getElementById(location.hash.slice(1));
+ if(target?.closest('.opening-omitted'))go('opening-routes');
+}
+document.addEventListener('click',event=>{const button=event.target.closest('[data-opening-route]');if(button)setOpeningRoute(button.dataset.openingRoute);});
+document.addEventListener('change',event=>{if(event.target.matches('.opening-select'))setOpeningRoute(event.target.value);});
+
+function routeOf(t,override){if(data.openingRoutes?.coreTasks.includes(t.id))return openingRoute==='feiyu'?'alternate':'main';return override||state.routes[t.id]||t.routes?.[0].id;}
 function activeSteps(t,override){const route=routeOf(t,override);return t.steps.filter(s=>(!s.route||s.route===route)&&!state.stepSkips[s.id]);}
 function stepProgress(t,override){const steps=activeSteps(t,override);return{steps,done:steps.filter(s=>state.steps[s.id]).length,total:steps.length};}
 function updateTaskCompletion(id){const steps=activeSteps(data.tasks.find(t=>t.id===id));state.checks[id]=steps.length>0&&steps.every(s=>state.steps[s.id]);}
@@ -71,6 +140,7 @@ function refresh(){
  $$('nav>a').forEach(a=>a.classList.toggle('active',a.hash==='#'+view));
  if(data.readingGuide)paintReadingOverview();else paintTracker();
  paintPersonTasks();
+ paintOpeningRoute();
 }
 function taskGroup(t){return t.standalone?{title:'中期循环 · 独立任务',day:'堂主成型后，持续到第80天前'}:data.stages.find(s=>s.id===t.stage);}
 function paintReadingOverview(){
@@ -315,6 +385,7 @@ function applyFilter(){
  if(view==='archive')renderArchiveSearch();
  $('#empty').hidden=!!count||(!stageIds.has(view)&&view!=='midgame');
  $('#crumb').textContent=data.stages.find(s=>s.id===view)?.title||({home:data.readingGuide?'攻略总览':'旅程总览',archive:'完整原帖索引',tracker:'进度追踪',training:'人物 / 人力规划',tables:data.readingGuide?'专题 Wiki':'表格资料库',midgame:data.readingGuide?'中期日常事务':'中期循环 · 独立任务'}[view]||'攻略总览');
+ paintOpeningVisibility();
 }
 function navigate(hash=location.hash){
  clearHitMarks();if(!pendingSearchHit){$('#search-hit-bar').hidden=true;returnSearch=null;}
@@ -323,6 +394,11 @@ function navigate(hash=location.hash){
  if(aliases[key]){key=aliases[key];target=document.getElementById(key);}
  if(!target)key='home';
  target=document.getElementById(key);
+ const openingStep=target.closest('[data-step-row]'),openingTask=target.closest('.task');
+ if(openingStep?.dataset.stepRoute&&data.openingRoutes?.coreTasks.includes(openingTask?.id)){
+   openingRoute=openingStep.dataset.stepRoute==='alternate'?'feiyu':'body';
+   try{localStorage.setItem(OPENING_KEY,openingRoute);}catch(error){}
+ }
  const section=target.closest('[data-view]');view=section?section.id:'home';
  query='';$('#search').value='';$('#unfinished').checked=false;
  refresh();applyFilter();
@@ -463,7 +539,7 @@ function current(){
  if(card){el=card;id=card.id;}
  let title=el.querySelector('.guide-article > summary strong,h3,.stage-heading h2')?.textContent?.trim()||el.querySelector('figcaption')?.textContent?.trim()||id;
  const stage=data.stages.find(s=>s.id===id);
- if(stage)title=stage.title;
+ if(stage){const route=document.body.dataset.openingRoute||'body';title=data.openingRoutes?.profiles[route]?.stages[data.stages.indexOf(stage)]?.title||stage.title;}
  if(id==='tables')title='专题 Wiki';
  if(id==='home')title='攻略总览';
  if(id==='roadmap')title='阶段路线';
