@@ -528,7 +528,7 @@ function update(){
 }
 $('#save-page').onclick=()=>{const now=current();stored.saved=stored.saved.some(r=>r.id===now.id)?stored.saved.filter(r=>r.id!==now.id):[now,...stored.saved].slice(0,30);persist();update();};
 $('#copy-page-link').onclick=async()=>{
- const url=new URL(location.href);url.hash=current().id;
+ const url=new URL(location.href);if(!url.hash)url.hash='home';
  try{await navigator.clipboard.writeText(url.href);feedback('链接已复制');}
  catch(error){const field=document.createElement('textarea');field.value=url.href;document.body.append(field);field.select();const copied=document.execCommand('copy');field.remove();feedback(copied?'链接已复制':'可直接复制地址栏中的链接');}
 };
